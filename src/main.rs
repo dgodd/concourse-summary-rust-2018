@@ -14,19 +14,15 @@ fn main() -> Result<(), Box<dyn Error>> {
         for pipeline in &pipelines {
             print!("    {}:", pipeline.name.bold());
             for (key, val) in &pipeline.statuses {
-                match key {
-                    // paused_job, aborted, errored
-                    fly::Status::Success => {
-                        print!("{}", format!(" {}%", 100 * val / pipeline.num_jobs).green())
+                let perc = format!("{}%", 100 * val / pipeline.num_jobs);
+                print!(
+                    " {}",
+                    match key {
+                        fly::Status::Success => perc.green(),
+                        fly::Status::Fail => perc.red(),
+                        _ => format!("{:?}:{}%", key, perc).yellow(),
                     }
-                    fly::Status::Fail => {
-                        print!("{}", format!(" {}%", 100 * val / pipeline.num_jobs).red())
-                    }
-                    _ => print!(
-                        "{}",
-                        format!(" {:?}:{}%", key, 100 * val / pipeline.num_jobs).yellow()
-                    ),
-                }
+                )
             }
             print!("\n");
         }
