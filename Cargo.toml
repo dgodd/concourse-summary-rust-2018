@@ -5,6 +5,7 @@ authors = ["Dave Goddard <dave@goddard.id.au>"]
 edition = "2018"
 
 [dependencies]
+colored = "1.6"
 reqwest = "*"
 serde = "*"
 serde_json = "*"

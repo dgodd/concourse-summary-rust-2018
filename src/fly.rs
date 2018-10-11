@@ -35,9 +35,9 @@ pub fn get_rc() -> Result<Vec<(String, String, String)>, Box<dyn Error>> {
 
 #[derive(Debug, Clone)]
 pub struct Pipeline {
-    name: String,
-    num_jobs: u64,
-    statuses: BTreeMap<String, u64>,
+    pub name: String,
+    pub num_jobs: u64,
+    pub statuses: BTreeMap<String, u64>,
 }
 
 #[derive(Debug, Deserialize)]
