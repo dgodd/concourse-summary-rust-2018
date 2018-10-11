@@ -52,11 +52,16 @@ struct Build {
 }
 #[derive(Clone, Debug, Deserialize, Ord, PartialOrd, Eq, PartialEq, Hash)]
 pub enum Status {
-    paused_job,
-    aborted,
-    errored,
-    failed,
-    succeeded,
+    #[serde(rename = "paused_job")]
+    PausedJob,
+    #[serde(rename = "aborted")]
+    Abort,
+    #[serde(rename = "errored")]
+    Error,
+    #[serde(rename = "failed")]
+    Fail,
+    #[serde(rename = "succeeded")]
+    Success,
 }
 
 pub fn get_pipelines(host: &str) -> Result<Vec<Pipeline>, Box<dyn Error>> {

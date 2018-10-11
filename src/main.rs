@@ -17,8 +17,8 @@ fn main() -> Result<(), Box<dyn Error>> {
             for (key,val) in &pipeline.statuses {
                 match key {
                     // paused_job, aborted, errored
-                    fly::Status::succeeded => print!("{}", format!(" {}%", 100*val/pipeline.num_jobs).green()),
-                    fly::Status::failed => print!("{}", format!(" {}%", 100*val/pipeline.num_jobs).red()),
+                    fly::Status::Success => print!("{}", format!(" {}%", 100*val/pipeline.num_jobs).green()),
+                    fly::Status::Fail => print!("{}", format!(" {}%", 100*val/pipeline.num_jobs).red()),
                     _ => print!("{}", format!(" {:?}:{}%", key, 100*val/pipeline.num_jobs).yellow()),
                 }
             }
