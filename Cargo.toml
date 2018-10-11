@@ -1,0 +1,9 @@
+[package]
+name = "concourse-summary-rust-2018"
+version = "0.1.0"
+authors = ["Dave Goddard <dave@goddard.id.au>"]
+edition = "2018"
+
+[dependencies]
+reqwest = "*"
+serde_json = "*"
