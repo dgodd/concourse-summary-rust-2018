@@ -14,16 +14,13 @@ fn main() -> Result<(), Box<dyn Error>> {
         let pipelines = fly::get_pipelines(host)?;
         for pipeline in &pipelines {
             print!("    {}:", pipeline.name.bold());
-            // paused_job aborted errored failed succeeded
-            if let Some(num) = pipeline.statuses.get("succeeded") {
-                print!("{}", format!(" Success: {}/{}", num, pipeline.num_jobs).green());
-            }
-            if let Some(num) = pipeline.statuses.get("failed") {
-                print!("{}", format!(" Fail: {}/{}", num, pipeline.num_jobs).red());
-            }
-            let others : Vec<&String> = pipeline.statuses.iter().map(|(k,_)| k).filter(|k| *k != "succeeded" && *k != "failed").collect();
-            if others.len() > 0 {
-                print!(" {:?}", others);
+            for (key,val) in &pipeline.statuses {
+                match key {
+                    // paused_job, aborted, errored
+                    fly::Status::succeeded => print!("{}", format!(" {}%", 100*val/pipeline.num_jobs).green()),
+                    fly::Status::failed => print!("{}", format!(" {}%", 100*val/pipeline.num_jobs).red()),
+                    _ => print!("{}", format!(" {:?}:{}%", key, 100*val/pipeline.num_jobs).yellow()),
+                }
             }
             print!("\n");
         }

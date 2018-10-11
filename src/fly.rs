@@ -37,7 +37,7 @@ pub fn get_rc() -> Result<Vec<(String, String, String)>, Box<dyn Error>> {
 pub struct Pipeline {
     pub name: String,
     pub num_jobs: u64,
-    pub statuses: BTreeMap<String, u64>,
+    pub statuses: BTreeMap<Status, u64>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -48,7 +48,15 @@ struct Job {
 }
 #[derive(Debug, Deserialize)]
 struct Build {
-    status: String,
+    status: Status,
+}
+#[derive(Clone, Debug, Deserialize, Ord, PartialOrd, Eq, PartialEq, Hash)]
+pub enum Status {
+    paused_job,
+    aborted,
+    errored,
+    failed,
+    succeeded,
 }
 
 pub fn get_pipelines(host: &str) -> Result<Vec<Pipeline>, Box<dyn Error>> {
@@ -57,7 +65,9 @@ pub fn get_pipelines(host: &str) -> Result<Vec<Pipeline>, Box<dyn Error>> {
 
     let mut a = BTreeMap::new();
     for ref job in &json {
-        let pipeline = a.entry(job.pipeline_name.to_owned()).or_insert(Pipeline{name:job.pipeline_name.to_owned(),num_jobs:0,statuses: BTreeMap::new()});
+        let pipeline = a.entry(job.pipeline_name.to_owned()).or_insert(
+            Pipeline{name:job.pipeline_name.to_owned(),num_jobs:0,statuses: BTreeMap::new()}
+        );
         pipeline.num_jobs += 1;
         match &job.finished_build {
             Some(fb) => {
