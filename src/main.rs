@@ -1,8 +1,7 @@
-#[macro_use] extern crate serde_derive;
-use std::{
-    error::Error,
-};
+#[macro_use]
+extern crate serde_derive;
 use colored::*;
+use std::error::Error;
 mod fly;
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -14,12 +13,19 @@ fn main() -> Result<(), Box<dyn Error>> {
         let pipelines = fly::get_pipelines(host)?;
         for pipeline in &pipelines {
             print!("    {}:", pipeline.name.bold());
-            for (key,val) in &pipeline.statuses {
+            for (key, val) in &pipeline.statuses {
                 match key {
                     // paused_job, aborted, errored
-                    fly::Status::Success => print!("{}", format!(" {}%", 100*val/pipeline.num_jobs).green()),
-                    fly::Status::Fail => print!("{}", format!(" {}%", 100*val/pipeline.num_jobs).red()),
-                    _ => print!("{}", format!(" {:?}:{}%", key, 100*val/pipeline.num_jobs).yellow()),
+                    fly::Status::Success => {
+                        print!("{}", format!(" {}%", 100 * val / pipeline.num_jobs).green())
+                    }
+                    fly::Status::Fail => {
+                        print!("{}", format!(" {}%", 100 * val / pipeline.num_jobs).red())
+                    }
+                    _ => print!(
+                        "{}",
+                        format!(" {:?}:{}%", key, 100 * val / pipeline.num_jobs).yellow()
+                    ),
                 }
             }
             print!("\n");

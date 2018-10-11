@@ -1,11 +1,4 @@
-use std::{
-    collections::BTreeMap,
-    path::Path,
-    env,
-    fs::File,
-    io::prelude::Read,
-    error::Error,
-};
+use std::{collections::BTreeMap, env, error::Error, fs::File, io::prelude::Read, path::Path};
 
 #[derive(Debug, Deserialize)]
 struct Token {
@@ -29,7 +22,16 @@ pub fn get_rc() -> Result<Vec<(String, String, String)>, Box<dyn Error>> {
     let mut contents = String::new();
     f.read_to_string(&mut contents)?;
     let fly_rc: FlyRC = serde_yaml::from_str(&contents)?;
-    let targets = fly_rc.targets.iter().map(|(key,target)| (key.to_owned(),target.api.to_owned(), target.token.value.to_owned())).collect();
+    let targets = fly_rc
+        .targets
+        .iter()
+        .map(|(key, target)| {
+            (
+                key.to_owned(),
+                target.api.to_owned(),
+                target.token.value.to_owned(),
+            )
+        }).collect();
     Ok(targets)
 }
 
@@ -70,16 +72,18 @@ pub fn get_pipelines(host: &str) -> Result<Vec<Pipeline>, Box<dyn Error>> {
 
     let mut a = BTreeMap::new();
     for ref job in &json {
-        let pipeline = a.entry(job.pipeline_name.to_owned()).or_insert(
-            Pipeline{name:job.pipeline_name.to_owned(),num_jobs:0,statuses: BTreeMap::new()}
-        );
+        let pipeline = a.entry(job.pipeline_name.to_owned()).or_insert(Pipeline {
+            name: job.pipeline_name.to_owned(),
+            num_jobs: 0,
+            statuses: BTreeMap::new(),
+        });
         pipeline.num_jobs += 1;
         match &job.finished_build {
             Some(fb) => {
                 let status = &fb.status;
                 *pipeline.statuses.entry(status.to_owned()).or_insert(0) += 1;
-            },
-            None => {},
+            }
+            None => {}
         }
     }
 
