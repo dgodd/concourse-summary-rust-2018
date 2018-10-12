@@ -1,4 +1,4 @@
-use std::{collections::BTreeMap, env, error::Error, fs::File, io::prelude::Read, path::Path};
+use std::{collections::BTreeMap, error::Error, fs::File, io::prelude::Read, path::Path};
 
 #[derive(Debug, Deserialize)]
 struct Token {
@@ -16,8 +16,7 @@ struct FlyRC {
     targets: BTreeMap<String, Target>,
 }
 
-pub fn get_rc() -> Result<Vec<(String, String, String)>, Box<dyn Error>> {
-    let home = env::var("HOME")?;
+pub fn get_rc(home: &str) -> Result<Vec<(String, String, String)>, Box<dyn Error>> {
     let mut f = File::open(Path::new(&home).join(".flyrc"))?;
     let mut contents = String::new();
     f.read_to_string(&mut contents)?;
@@ -35,17 +34,23 @@ pub fn get_rc() -> Result<Vec<(String, String, String)>, Box<dyn Error>> {
     Ok(targets)
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Pipeline {
+    pub id: u64,
     pub name: String,
+    pub paused: bool,
+    pub public: bool,
+    pub team_name: String,
+    #[serde(skip_deserializing)]
     pub num_jobs: u64,
+    #[serde(skip_deserializing)]
     pub statuses: BTreeMap<Status, u64>,
 }
 
 #[derive(Debug, Deserialize)]
 struct Job {
     pipeline_name: String,
-    // team_name: String,
+    team_name: String,
     finished_build: Option<Build>,
 }
 #[derive(Debug, Deserialize)]
@@ -66,26 +71,39 @@ pub enum Status {
     Success,
 }
 
-pub fn get_pipelines(host: &str) -> Result<Vec<Pipeline>, Box<dyn Error>> {
-    let url = format!("{}/api/v1/jobs", host);
-    let json: Vec<Job> = reqwest::get(&url)?.json()?;
+pub fn get_pipelines(host: &str, token: &str) -> Result<Vec<Pipeline>, Box<dyn Error>> {
+    let client = reqwest::Client::new();
 
+    let mut pipelines: Vec<Pipeline> = client
+        .get(&format!("{}/api/v1/pipelines", host))
+        .header("Authorization", format!("Bearer+{}", token))
+        .send()?
+        .json()?;
     let mut a = BTreeMap::new();
-    for ref job in &json {
-        let pipeline = a.entry(job.pipeline_name.to_owned()).or_insert(Pipeline {
-            name: job.pipeline_name.to_owned(),
-            num_jobs: 0,
-            statuses: BTreeMap::new(),
-        });
-        pipeline.num_jobs += 1;
-        match &job.finished_build {
-            Some(fb) => {
-                let status = &fb.status;
-                *pipeline.statuses.entry(status.to_owned()).or_insert(0) += 1;
-            }
-            None => {}
-        }
+    for (i, pipeline) in pipelines.iter().enumerate() {
+        a.insert((pipeline.team_name.to_owned(), pipeline.name.to_owned()), i);
     }
 
-    Ok(a.values().cloned().collect())
+    let jobs: Vec<Job> = client
+        .get(&format!("{}/api/v1/jobs", host))
+        .header("Authorization", format!("Bearer+{}", token))
+        .send()?
+        .json()?;
+
+    for ref job in &jobs {
+        a.entry((job.team_name.to_owned(), job.pipeline_name.to_owned()))
+            .and_modify(|i| {
+                let ref mut pipeline = pipelines[*i];
+                pipeline.num_jobs += 1;
+                match &job.finished_build {
+                    Some(fb) => {
+                        let status = &fb.status;
+                        *pipeline.statuses.entry(status.to_owned()).or_insert(0) += 1;
+                    }
+                    None => {}
+                }
+            });
+    }
+
+    Ok(pipelines)
 }
